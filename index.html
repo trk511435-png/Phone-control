@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منظومة الربط السحابي - الكويست والهاتف</title>
+    <title>التحكم السحابي المتزامن - الكويست والهاتف</title>
     <link rel="manifest" href="./manifest.json">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         :root {
             --bg-color: #0b0f19;
-            --card-bg: rgba(17, 24, 39, 0.85);
+            --card-bg: rgba(17, 24, 39, 0.9);
             --accent-color: #6366f1;
             --accent-hover: #4f46e5;
             --success-color: #10b981;
-            --danger-color: #ef4444;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             --border-color: rgba(255, 255, 255, 0.1);
@@ -98,10 +97,6 @@
             outline: none;
         }
 
-        .pairing-input:focus {
-            border-color: var(--accent-color);
-        }
-
         .action-btn {
             width: 100%;
             padding: 12px;
@@ -120,83 +115,93 @@
         .btn-success { background: var(--success-color); color: white; }
         .btn-success:hover { background: #059669; }
 
-        .btn-danger { background: var(--danger-color); color: white; }
-        .btn-danger:hover { background: #dc2626; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; }
 
-        /* شاشة البث الخاصة بالنظارة */
-        .screen-container {
+        /* شاشة الهاتف المتفاعلة */
+        .phone-display-container {
+            width: 90%;
+            height: 85vh;
+            background: #0f172a;
+            border: 2px solid var(--accent-color);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+        }
+
+        .phone-header {
+            background: #1e293b;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .phone-body {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .phone-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .phone-card.focused {
+            border-color: #38bdf8;
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+        }
+
+        /* شاشة الميتا كويست */
+        .quest-control-container {
             width: 90%;
             height: 85vh;
             background: #020617;
             border: 1px solid var(--border-color);
             border-radius: 16px;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
-            flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-        }
-
-        #remoteScreen {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 16px;
-            display: none;
-        }
-
-        .stream-placeholder {
             text-align: center;
+            padding: 20px;
         }
 
-        .stream-placeholder h3 { color: var(--text-muted); font-weight: 400; margin-bottom: 5px; }
-        
-        #controllerData {
+        #actionStatus {
             color: #38bdf8;
-            font-size: 15px;
+            font-size: 18px;
             background: rgba(56, 189, 248, 0.1);
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 12px 25px;
+            border-radius: 30px;
             border: 1px solid rgba(56, 189, 248, 0.2);
-            margin-top: 10px;
+            margin-top: 20px;
         }
 
-        .settings-btn {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 10px 20px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            z-index: 10;
-        }
-        .settings-btn:hover { background: var(--accent-color); border-color: var(--accent-color); }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            justify-content: center; align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: #111827; border: 1px solid var(--border-color);
-            padding: 35px; border-radius: 20px; width: 380px; text-align: right;
-        }
-        .modal-content h3 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        label { font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 8px; }
-        select { width: 100%; padding: 12px; background: #1f2937; color: white; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; margin-bottom: 20px; outline: none; }
         .status-mqtt { font-size: 13px; color: #38bdf8; margin-top: 15px; font-weight: 500; }
+        
+        .ios-guide {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid #f59e0b;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #fbbf24;
+            display: none;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -204,72 +209,87 @@
     <!-- 1. واجهة اختيار الجهاز الرئيسية -->
     <div id="roleSelectionView" class="view active">
         <div class="box">
-            <h2>اختر نوع جهازك الحالي</h2>
-            <p>حدد الجهاز لتشغيل الواجهة المخصصة له:</p>
-            <button class="action-btn btn-success" onclick="selectRole('quest')">🥽 أنا في ميتا كويست (استقبال وتحكم)</button>
-            <button class="action-btn btn-primary" onclick="selectRole('phone')">📱 أنا في الهاتف / الإيباد (بث الكاميرا/العرض)</button>
+            <h2>اختر نوع جهازك للربط</h2>
+            <p>حدد الجهاز لتشغيل وضع التحكم:</p>
+            <button class="action-btn btn-success" onclick="selectRole('quest')">🥽 أنا في ميتا كويست (وحدة التحكم)</button>
+            <button class="action-btn btn-primary" onclick="selectRole('phone')">📱 أنا في الهاتف / الإيباد</button>
         </div>
     </div>
 
-    <!-- 2. واجهة إدخال الكود للنظارة أو توليده -->
+    <!-- 2. واجهة إدخال الكود للنظارة -->
     <div id="questPairingView" class="view">
         <div class="box">
-            <h2>شاشة النظارة (ميتا كويست)</h2>
-            <p>رمز الاقتران الخاص بك:</p>
+            <h2>رمز ربط الميتا كويست</h2>
+            <p>انقل هذا الرمز إلى هاتفك:</p>
             <div class="code-display" id="pairingCode">------</div>
-            <button class="action-btn btn-success" onclick="startQuestView()">الانتقال لشاشة استقبال البث</button>
-            <button class="action-btn btn-primary" onclick="location.reload()" style="background:#374151;">تغيير الجهاز</button>
+            <button class="action-btn btn-success" onclick="startQuestControlView()">بدء إرسال أوامر التحكم</button>
+            <button class="action-btn btn-primary" onclick="location.reload()" style="background:#374151;">رجوع</button>
             <div class="status-mqtt" id="mqttStatusQuest">جاري الاتصال بالسحابة...</div>
         </div>
     </div>
 
-    <!-- 3. واجهة التحكم والبث الخاصة بالهاتف -->
-    <div id="phoneView" class="view">
+    <!-- 3. واجهة إدخال الكود واختيار نوع الهاتف (آيفون أو أندرويد) -->
+    <div id="phonePairingView" class="view">
         <div class="box">
-            <h2>لوحة بث الهاتف / الإيباد</h2>
-            <p>أدخل رمز النظارة للربط وبدء البث الآمن:</p>
-            <input type="text" id="targetCodeInput" class="pairing-input" maxlength="6" placeholder="أدخل 6 أرقام">
-            <button class="action-btn btn-success" id="startBroadcastBtn" onclick="startBroadcasting()">📡 بدء البث المباشر (الكاميرا/العرض)</button>
-            <button class="action-btn btn-danger" id="stopBroadcastBtn" onclick="stopBroadcasting()" style="display:none;">🛑 إيقاف البث</button>
-            <button class="action-btn btn-primary" onclick="location.reload()" style="background:#374151;">تغيير الجهاز</button>
+            <h2>ربط الهاتف بالميتا كويست</h2>
+            <p>أدخل رمز الـ 6 أرقام الظاهر في النظارة:</p>
+            <input type="text" id="targetCodeInput" class="pairing-input" maxlength="6" placeholder="******">
+            
+            <p style="margin-bottom: 8px;">اختر نظام هاتفك:</p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="action-btn btn-warning" id="iosBtn" onclick="setPhoneType('ios')" style="margin-top:0;">🍏 آيفون / آيباد (iOS)</button>
+                <button class="action-btn btn-primary" id="androidBtn" onclick="setPhoneType('android')" style="margin-top:0;">🤖 أندرويد</button>
+            </div>
+
+            <div id="iosGuideBox" class="ios-guide">
+                <strong>تعليمات الآيفون:</strong> نظراً لقيود نظام iOS، سيتم تفعيل شاشة التحكم المتفاعلة المتزامنة مع النظارة مباشرة بدون الحاجة لبث الفيديو المعقد.
+            </div>
+
+            <button class="action-btn btn-success" onclick="connectPhone()" style="margin-top: 15px;">ربط وتفعيل الشاشة المتفاعلة</button>
+            <button class="action-btn btn-primary" onclick="location.reload()" style="background:#374151;">رجوع</button>
             <div class="status-mqtt" id="mqttStatusPhone">جاري الاتصال بالسحابة...</div>
         </div>
     </div>
 
-    <!-- 4. شاشة العرض الرئيسية للميتا كويست (استقبال البث وأوامر اليد) -->
-    <div id="questMainView" class="view">
-        <div class="screen-container">
-            <div id="waitingStreamText" class="stream-placeholder">
-                <h3>بانتظار بدء البث من الهاتف...</h3>
-                <p id="controllerData">حالة القير: بانتظار إشارات التحكم...</p>
+    <!-- 4. شاشة الهاتف المتفاعلة -->
+    <div id="phoneScreenView" class="view">
+        <div class="phone-display-container">
+            <div class="phone-header">
+                <span id="phoneSystemLabel">📱 شاشة الجوال (متصلة بالنظارة)</span>
+                <span style="color: #10b981; font-weight: bold;">● متصل سحابياً</span>
             </div>
-            <video id="remoteScreen" autoplay playsinline></video>
-            <button class="settings-btn" onclick="toggleSettings(true)">⚙️ الإعدادات</button>
+            <div class="phone-body" id="phoneBody">
+                <div class="phone-card focused" id="card1">
+                    <h3>لوحة التطبيقات والمهام</h3>
+                    <p>قم بتحريك القير في يد الميتا كويست للتنقل التلقائي هنا.</p>
+                </div>
+                <div class="phone-card" id="card2">
+                    <h3>التنقل السريع بين النوافذ</h3>
+                    <p>هذه الواجهة مصممة لتتفاعل فوراً مع أوامر النظارة.</p>
+                </div>
+                <div class="phone-card" id="card3">
+                    <h3>إعدادات الاتصال السحابي</h3>
+                    <p>متصل عبر بروتوكول MQTT الآمن واللحظي.</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- نافذة الإعدادات -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <h3>تخصيص وحدات التحكم</h3>
-            <label>وظيفة القير اليمين (يسار/يمين):</label>
-            <select id="stickRight">
-                <option value="scroll">تمرير الشاشة (Scroll)</option>
-                <option value="volume">رفع/خفض الصوت</option>
-            </select>
-            <label>وظيفة الزر الرئيسي (A):</label>
-            <select id="btnA">
-                <option value="click">نقرة (Click)</option>
-                <option value="back">رجوع (Back)</option>
-            </select>
-            <button class="action-btn btn-primary" onclick="toggleSettings(false)">حفظ وإغلاق</button>
+    <!-- 5. شاشة إرسال التحكم الخاصة بالميتا كويست -->
+    <div id="questControlView" class="view">
+        <div class="quest-control-container">
+            <h2>🥽 لوحة إرسال أوامر التحكم للميتا كويست</h2>
+            <p>حرك القير الأيمن في يد النظارة للأعلى والأسفل للتنقل في شاشة الجوال:</p>
+            <div id="actionStatus">بانتظار حركة اليد والقير...</div>
         </div>
     </div>
 
     <script>
         let currentRole = '';
         let pairingCode = '';
-        let localStream = null;
+        let selectedPhoneType = '';
+        let activeCardIndex = 0;
+        const totalCards = 3;
 
         function selectRole(role) {
             currentRole = role;
@@ -279,14 +299,42 @@
                 document.getElementById('pairingCode').innerText = pairingCode;
                 document.getElementById('questPairingView').classList.add('active');
             } else {
-                document.getElementById('phoneView').classList.add('active');
+                document.getElementById('phonePairingView').classList.add('active');
             }
         }
 
-        function startQuestView() {
+        function setPhoneType(type) {
+            selectedPhoneType = type;
+            if (type === 'ios') {
+                document.getElementById('iosBtn').style.border = '2px solid #fff';
+                document.getElementById('androidBtn').style.border = 'none';
+                document.getElementById('iosGuideBox').style.display = 'block';
+            } else {
+                document.getElementById('androidBtn').style.border = '2px solid #fff';
+                document.getElementById('iosBtn').style.border = 'none';
+                document.getElementById('iosGuideBox').style.display = 'none';
+            }
+        }
+
+        function startQuestControlView() {
             document.getElementById('questPairingView').classList.remove('active');
-            document.getElementById('questMainView').classList.add('active');
+            document.getElementById('questControlView').classList.add('active');
             initQuestController();
+        }
+
+        function connectPhone() {
+            const code = document.getElementById('targetCodeInput').value.trim();
+            if (code.length === 6) {
+                if (!selectedPhoneType) {
+                    alert("الرجاء اختيار نوع الهاتف (آيفون أو أندرويد أولاً)");
+                    return;
+                }
+                document.getElementById('phonePairingView').classList.remove('active');
+                document.getElementById('phoneScreenView').classList.add('active');
+                document.getElementById('phoneSystemLabel').innerText = `📱 شاشة (${selectedPhoneType === 'ios' ? 'آيفون' : 'أندرويد'}) - متصل`;
+            } else {
+                alert("الرجاء إدخال رمز صحيح من 6 أرقام");
+            }
         }
 
         // إعدادات اتصال HiveMQ الثابتة
@@ -307,87 +355,66 @@
             document.getElementById('mqttStatusQuest').innerText = "متصل بالسحابة (MQTT)";
             document.getElementById('mqttStatusPhone').innerText = "متصل بالسحابة (MQTT)";
             client.subscribe('quest/control/commands', (err) => {
-                if (!err) console.log("متصل بقناة الأوامر");
+                if (!err) console.log("تم الاشتراك بقناة التحكم");
             });
         });
 
         client.on('message', (topic, payload) => {
-            if (topic === 'quest/control/commands' && currentRole === 'quest') {
+            if (topic === 'quest/control/commands' && currentRole === 'phone') {
                 const data = JSON.parse(payload.toString());
-                document.getElementById('controllerData').innerText = `أمر مستلم: ${data.action} | القيمة: ${data.value}`;
+                handlePhoneRemoteAction(data.action);
             }
         });
 
-        client.on('error', (err) => {
-            console.error(err);
-        });
-
-        // وظيفة البث المرن في الهاتف (تتجاوز قيود متصفحات الهواتف)
-        async function startBroadcasting() {
-            const code = document.getElementById('targetCodeInput').value.trim();
-            if (code.length !== 6) {
-                alert("الرجاء إدخال رمز النظارة الصحيح المكون من 6 أرقام");
-                return;
+        function handlePhoneRemoteAction(action) {
+            for (let i = 1; i <= totalCards; i++) {
+                document.getElementById(`card${i}`).classList.remove('focused');
             }
-            try {
-                // محاولة مشاركة الشاشة أولاً، وإذا رفض المتصفح يتحول تلقائياً للكاميرا كبديل مباشر
-                if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-                    try {
-                        localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-                    } catch (e) {
-                        console.warn("مشاركة الشاشة غير مدعومة بالمتصفح، جاري التحويل لطريقة البديل المرئي...");
-                        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
-                    }
-                } else {
-                    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
-                }
 
-                document.getElementById('startBroadcastBtn').style.display = 'none';
-                document.getElementById('stopBroadcastBtn').style.display = 'block';
-                alert("تم بدء البث بنجاح!");
-            } catch (err) {
-                console.error("تعذر بدء البث:", err);
-                alert("تعذر بدء البث من متصفح هاتفك بسبب قيود النظام الأمنية.");
+            if (action === 'next') {
+                activeCardIndex = (activeCardIndex + 1) % totalCards;
+            } else if (action === 'prev') {
+                activeCardIndex = (activeCardIndex - 1 + totalCards) % totalCards;
             }
+
+            document.getElementById(`card${activeCardIndex + 1}`).classList.add('focused');
+            document.getElementById(`card${activeCardIndex + 1}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        function stopBroadcasting() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            document.getElementById('startBroadcastBtn').style.display = 'block';
-            document.getElementById('stopBroadcastBtn').style.display = 'none';
-        }
-
-        function toggleSettings(show) {
-            document.getElementById('settingsModal').style.display = show ? 'flex' : 'none';
-        }
-
-        // رصد أداة التحكم (Gamepad) في النظارة فقط
         function initQuestController() {
+            let lastSentTime = 0;
             window.addEventListener("gamepadconnected", (e) => {
-                console.log("تم توصيل يد تحكم الكويست:", e.gamepad.id);
+                console.log("تم توصيل اليد:", e.gamepad.id);
             });
 
             function checkGamepads() {
                 const gamepads = navigator.getGamepads();
                 if (gamepads[0]) {
                     const gp = gamepads[0];
-                    const axisX = gp.axes[2]?.toFixed(2) || 0;
+                    const axisY = gp.axes[1]?.toFixed(2) || gp.axes[3]?.toFixed(2) || 0;
                     
-                    if (Math.abs(axisX) > 0.2) {
-                        const action = document.getElementById('stickRight').value;
-                        const payload = JSON.stringify({ action: action, value: axisX });
-                        
-                        if(client.connected) {
-                            client.publish('quest/control/commands', payload);
+                    const now = Date.now();
+                    if (now - lastSentTime > 400) {
+                        if (axisY < -0.5) {
+                            sendControllerAction('prev');
+                            lastSentTime = now;
+                        } else if (axisY > 0.5) {
+                            sendControllerAction('next');
+                            lastSentTime = now;
                         }
                     }
                 }
                 requestAnimationFrame(checkGamepads);
             }
             requestAnimationFrame(checkGamepads);
+        }
+
+        function sendControllerAction(action) {
+            const payload = JSON.stringify({ action: action });
+            if (client.connected) {
+                client.publish('quest/control/commands', payload);
+                document.getElementById('actionStatus').innerText = `تم إرسال أمر: ${action === 'next' ? 'تحريك للأسفل/التالي' : 'تحريك للأعلى/السابق'}`;
+            }
         }
     </script>
 </body>
