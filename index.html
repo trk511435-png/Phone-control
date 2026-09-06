@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم الكويست السحابية</title>
-    <!-- ربط ملف الـ Manifest لتفعيل PWA -->
+    <title>منظومة الربط السحابي - الكويست والهاتف</title>
     <link rel="manifest" href="./manifest.json">
-    <!-- استدعاء مكتبة MQTT.js -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         :root {
             --bg-color: #0b0f19;
-            --card-bg: rgba(17, 24, 39, 0.75);
+            --card-bg: rgba(17, 24, 39, 0.85);
             --accent-color: #6366f1;
             --accent-hover: #4f46e5;
             --success-color: #10b981;
@@ -49,55 +47,59 @@
             display: flex;
         }
 
-        /* تصميم كرت رمز الربط */
-        .pairing-box {
+        .box {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
-            padding: 30px 40px;
+            padding: 35px;
             border-radius: 20px;
             text-align: center;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-            max-width: 420px;
+            max-width: 440px;
             width: 90%;
         }
 
-        .pairing-box h2 {
+        .box h2 {
             margin-top: 0;
-            font-size: 22px;
+            font-size: 24px;
             color: var(--text-main);
         }
 
-        .pairing-box p {
+        .box p {
             color: var(--text-muted);
-            font-size: 13px;
-            margin-bottom: 15px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .role-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
         }
 
         .code-display {
-            font-size: 34px;
+            font-size: 38px;
             letter-spacing: 8px;
             color: #38bdf8;
-            margin: 10px 0;
+            margin: 15px 0;
             font-weight: 700;
             background: rgba(0, 0, 0, 0.4);
-            padding: 10px;
+            padding: 12px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
         }
 
-        /* خانة إدخال الكود */
         .pairing-input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background: #1f2937;
             color: #38bdf8;
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            font-size: 20px;
+            font-size: 22px;
             text-align: center;
             letter-spacing: 5px;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             box-sizing: border-box;
             outline: none;
         }
@@ -106,7 +108,35 @@
             border-color: var(--accent-color);
         }
 
-        /* الشاشة الرئيسية وبث التلفون */
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-primary { background: var(--accent-color); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-success:hover { background: #059669; }
+
+        .btn-download {
+            background: var(--download-color);
+            color: white;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .btn-download:hover { background: #0284c7; }
+
+        /* الشاشة الرئيسية للبث */
         .screen-container {
             width: 85%;
             height: 80vh;
@@ -119,19 +149,9 @@
             position: relative;
             flex-direction: column;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
         }
 
-        .stream-placeholder {
-            text-align: center;
-        }
-
-        .stream-placeholder h3 {
-            color: var(--text-muted);
-            font-weight: 400;
-            margin-bottom: 5px;
-        }
-
+        .stream-placeholder h3 { color: var(--text-muted); font-weight: 400; margin-bottom: 5px; }
         #controllerData {
             color: #38bdf8;
             font-size: 15px;
@@ -141,7 +161,6 @@
             border: 1px solid rgba(56, 189, 248, 0.2);
         }
 
-        /* زر الإعدادات الأنيق في الأسفل اليسار */
         .settings-btn {
             position: absolute;
             bottom: 25px;
@@ -157,202 +176,128 @@
             font-weight: 600;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
+        .settings-btn:hover { background: var(--accent-color); border-color: var(--accent-color); }
 
-        .settings-btn:hover {
-            background: var(--accent-color);
-            border-color: var(--accent-color);
-            transform: translateY(-2px);
-        }
-
-        /* نافذة الإعدادات المنبثقة (Modal) */
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(8px);
-            justify-content: center;
-            align-items: center;
+            justify-content: center; align-items: center;
             z-index: 1000;
         }
-
         .modal-content {
-            background: #111827;
-            border: 1px solid var(--border-color);
-            padding: 35px;
-            border-radius: 20px;
-            width: 380px;
-            text-align: right;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+            background: #111827; border: 1px solid var(--border-color);
+            padding: 35px; border-radius: 20px; width: 380px; text-align: right;
         }
-
-        .modal-content h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-        }
-
-        label {
-            font-size: 14px;
-            color: var(--text-muted);
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        select {
-            width: 100%;
-            padding: 12px;
-            background: #1f2937;
-            color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 15px;
-            margin-bottom: 20px;
-            outline: none;
-        }
-
-        .action-btn {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-primary {
-            background: var(--accent-color);
-            color: white;
-            margin-top: 8px;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: white;
-            margin-top: 8px;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        /* زر تحميل الـ APK المميز */
-        .btn-download {
-            background: var(--download-color);
-            color: white;
-            margin-top: 8px;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            line-height: normal;
-        }
-
-        .btn-download:hover {
-            background: #0284c7;
-        }
-
-        .status-mqtt {
-            font-size: 12px;
-            color: #38bdf8;
-            margin-top: 10px;
-            font-weight: 500;
-        }
+        .modal-content h3 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        label { font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 8px; }
+        select { width: 100%; padding: 12px; background: #1f2937; color: white; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; margin-bottom: 20px; outline: none; }
+        .status-mqtt { font-size: 13px; color: #38bdf8; margin-top: 15px; font-weight: 500; }
     </style>
 </head>
 <body>
 
-    <!-- الواجهة الأولى: كود الربط وإدخاله وتحميل التطبيق -->
-    <div id="pairingView" class="view active">
-        <div class="pairing-box">
-            <h2>إقتران الأجهزة</h2>
-            <p>رمز النظارة الخاص بك:</p>
-            <div class="code-display" id="pairingCode">------</div>
-            
-            <input type="text" id="userInputCode" class="pairing-input" maxlength="6" placeholder="أدخل 6 أرقام">
-            
-            <button class="action-btn btn-success" onclick="verifyAndPair()">ربط الجهاز</button>
-            
-            <!-- زر تحميل تطبيق الـ APK للنظارة -->
-            <a href="./app.apk" class="action-btn btn-download" download="QuestCtrl.apk">📥 تحميل تطبيق الكويست (APK)</a>
-
-            <div class="status-mqtt" id="mqttStatus">جاري الاتصال بالسحابة...</div>
+    <!-- 1. شاشة اختيار نوع الجهاز (البداية) -->
+    <div id="roleSelectionView" class="view active">
+        <div class="box">
+            <h2>اختر جهازك للبدء</h2>
+            <p>حدد الجهاز الذي تستخدمه حالياً لتوجيهك للواجهة المناسبة:</p>
+            <button class="action-btn btn-success" onclick="selectRole('quest')">🥽 أنا أستخدم ميتا كويست (إنشاء كود)</button>
+            <button class="action-btn btn-primary" onclick="selectRole('phone')">📱 أنا أستخدم هاتف / إيباد (إدخال كود)</button>
+            <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <a href="./app.apk" class="action-btn btn-download" download="QuestCtrl.apk">📥 تحميل تطبيق النظارة (APK)</a>
+            </div>
         </div>
     </div>
 
-    <!-- الواجهة الرئيسية: شاشة التلفون وزر الإعدادات -->
+    <!-- 2. شاشة ميتا كويست (توليد كود وبث) -->
+    <div id="questPairingView" class="view">
+        <div class="box">
+            <h2>لوحة النظارة (ميتا كويست)</h2>
+            <p>انقل هذا الرمز إلى هاتفك المرتبط:</p>
+            <div class="code-display" id="pairingCode">------</div>
+            <button class="action-btn btn-success" onclick="startQuestDashboard()">تأكيد الدخول للشاشة الرئيسية</button>
+            <button class="action-btn btn-primary" onclick="location.reload()" style="background:#374151;">رجوع للخلف</button>
+            <div class="status-mqtt" id="mqttStatusQuest">جاري الاتصال بالسحابة...</div>
+        </div>
+    </div>
+
+    <!-- 3. شاشة الهاتف / الإيباد (إدخال الكود) -->
+    <div id="phonePairingView" class="view">
+        <div class="box">
+            <h2>إقتران الهاتف / الإيباد</h2>
+            <p>أدخل رمز الاقتران المكون من 6 أرقام الظاهر في النظارة:</p>
+            <input type="text" id="userInputCode" class="pairing-input" maxlength="6" placeholder="******">
+            <button class="action-btn btn-success" onclick="verifyPhonePair()">ربط واتصال</button>
+            <button class="action-btn btn-primary" onclick="location.reload()" style="background:#374151;">رجوع للخلف</button>
+            <div class="status-mqtt" id="mqttStatusPhone">جاري الاتصال بالسحابة...</div>
+        </div>
+    </div>
+
+    <!-- 4. الشاشة الرئيسية المشتركة للبث والتحكم -->
     <div id="mainView" class="view">
         <div class="screen-container">
             <div class="stream-placeholder">
-                <h3>بث شاشة الجوال المباشر (سحابي)</h3>
+                <h3>بث الشاشة المتصل سحابياً (نشط)</h3>
                 <br>
-                <p id="controllerData">حالة القير: بانتظار حركة الأزرار...</p>
+                <p id="controllerData">حالة القير والأزرار: بانتظار الإشارات...</p>
             </div>
-            <!-- زر الإعدادات في التحت يسار -->
-            <button class="settings-btn" onclick="toggleSettings(true)">
-                <span>⚙️</span> الإعدادات
-            </button>
+            <button class="settings-btn" onclick="toggleSettings(true)">⚙️ الإعدادات</button>
         </div>
     </div>
 
-    <!-- نافذة إعدادات الأزرار المنبثقة -->
+    <!-- نافذة الإعدادات -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <h3>تخصيص وحدات التحكم</h3>
-            
             <label>وظيفة القير اليمين (يسار/يمين):</label>
             <select id="stickRight">
                 <option value="scroll">تمرير الشاشة (Scroll)</option>
                 <option value="volume">رفع/خفض الصوت</option>
             </select>
-            
             <label>وظيفة الزر الرئيسي (A):</label>
             <select id="btnA">
                 <option value="click">نقرة (Click)</option>
                 <option value="back">رجوع (Back)</option>
             </select>
-
             <button class="action-btn btn-primary" onclick="toggleSettings(false)">حفظ وإغلاق</button>
         </div>
     </div>
 
     <script>
-        // توليد كود عشوائي من 6 أرقام وتخزينه مؤقتاً
         let generatedPairCode = "";
-        function generateCode() {
-            generatedPairCode = Math.floor(100000 + Math.random() * 900000).toString();
-            document.getElementById('pairingCode').innerText = generatedPairCode;
-        }
-        generateCode();
 
-        // التحقق من الرمز المدخل للانتقال للرئيسية
-        function verifyAndPair() {
-            const enteredCode = document.getElementById('userInputCode').value.trim();
-            if (enteredCode === generatedPairCode || enteredCode.length === 6) {
-                document.getElementById('pairingView').classList.remove('active');
-                document.getElementById('mainView').classList.add('active');
+        function selectRole(role) {
+            document.getElementById('roleSelectionView').classList.remove('active');
+            if (role === 'quest') {
+                generatedPairCode = Math.floor(100000 + Math.random() * 900000).toString();
+                document.getElementById('pairingCode').innerText = generatedPairCode;
+                document.getElementById('questPairingView').classList.add('active');
             } else {
-                alert("الرجاء إدخال رمز صحيح مكون من 6 أرقام");
+                document.getElementById('phonePairingView').classList.add('active');
             }
         }
 
-        // إعدادات اتصال HiveMQ WebSocket
+        function startQuestDashboard() {
+            document.getElementById('questPairingView').classList.remove('active');
+            document.getElementById('mainView').classList.add('active');
+        }
+
+        function verifyPhonePair() {
+            const enteredCode = document.getElementById('userInputCode').value.trim();
+            if (enteredCode.length === 6) {
+                document.getElementById('phonePairingView').classList.remove('active');
+                document.getElementById('mainView').classList.add('active');
+            } else {
+                alert("الرجاء إدخال الرمز المكون من 6 أرقام بشكل صحيح");
+            }
+        }
+
+        // إعدادات الاتصال السحابي الثابتة ببياناتك
         const mqttHost = 'wss://7f9dc9fedda84268a977070b2dfd69af.s1.eu.hivemq.cloud:8884/mqtt';
-        
         const options = {
             clientId: 'quest_client_' + Math.random().toString(16).substr(2, 8),
             protocolId: 'MQTT',
@@ -366,14 +311,16 @@
         const client = mqtt.connect(mqttHost, options);
 
         client.on('connect', () => {
-            document.getElementById('mqttStatus').innerText = "متصل بالسحابة بنجاح (MQTT)";
+            document.getElementById('mqttStatusQuest').innerText = "متصل بالسحابة بنجاح (MQTT)";
+            document.getElementById('mqttStatusPhone').innerText = "متصل بالسحابة بنجاح (MQTT)";
             client.subscribe('quest/control/commands', (err) => {
-                if (!err) console.log("تم الاشتراك بنجاح في القناة");
+                if (!err) console.log("متصل بقناة التحكم");
             });
         });
 
         client.on('error', (err) => {
-            document.getElementById('mqttStatus').innerText = "خطأ في الاتصال بالسحابة";
+            document.getElementById('mqttStatusQuest').innerText = "خطأ في الاتصال بالسحابة";
+            document.getElementById('mqttStatusPhone').innerText = "خطأ في الاتصال بالسحابة";
             console.error(err);
         });
 
@@ -381,9 +328,9 @@
             document.getElementById('settingsModal').style.display = show ? 'flex' : 'none';
         }
 
-        // رصد أزرار وقير الكويست وإرسالها عبر السحابة
+        // رصد أجهزة التحكم في النظارة وإرسال البيانات سحابياً
         window.addEventListener("gamepadconnected", (e) => {
-            console.log("تم توصيل يد التحكم:", e.gamepad.id);
+            console.log("تم توصيل اليد:", e.gamepad.id);
         });
 
         function checkGamepads() {
