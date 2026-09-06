@@ -72,15 +72,35 @@
         }
 
         .code-display {
-            font-size: 42px;
-            letter-spacing: 10px;
+            font-size: 38px;
+            letter-spacing: 8px;
             color: #38bdf8;
-            margin: 20px 0;
+            margin: 15px 0;
             font-weight: 700;
             background: rgba(0, 0, 0, 0.4);
-            padding: 15px;
+            padding: 12px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
+        }
+
+        /* خانة إدخال الكود */
+        .pairing-input {
+            width: 100%;
+            padding: 12px;
+            background: #1f2937;
+            color: #38bdf8;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 22px;
+            text-align: center;
+            letter-spacing: 5px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .pairing-input:focus {
+            border-color: var(--accent-color);
         }
 
         /* الشاشة الرئيسية وبث التلفون */
@@ -195,11 +215,6 @@
             font-size: 15px;
             margin-bottom: 20px;
             outline: none;
-            transition: border-color 0.2s;
-        }
-
-        select:focus {
-            border-color: var(--accent-color);
         }
 
         .action-btn {
@@ -226,7 +241,7 @@
         .btn-success {
             background: var(--success-color);
             color: white;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
         .btn-success:hover {
@@ -236,20 +251,24 @@
         .status-mqtt {
             font-size: 13px;
             color: #38bdf8;
-            margin-top: 15px;
+            margin-top: 12px;
             font-weight: 500;
         }
     </style>
 </head>
 <body>
 
-    <!-- الواجهة الأولى: كود الربط -->
+    <!-- الواجهة الأولى: كود الربط وإدخاله -->
     <div id="pairingView" class="view active">
         <div class="pairing-box">
-            <h2>الربط مع الجهاز</h2>
-            <p>أدخل هذا الرمز في تطبيق الجوال لتفعيل البث</p>
+            <h2>إقتران الأجهزة</h2>
+            <p>رمز النظارة الخاص بك:</p>
             <div class="code-display" id="pairingCode">------</div>
-            <button class="action-btn btn-success" onclick="simulatePairing()">بدء الاتصال فوراً</button>
+            
+            <p style="margin-top: 20px;">أدخل رمز الاقتران للاتصال:</p>
+            <input type="text" id="userInputCode" class="pairing-input" maxlength="6" placeholder="أدخل 6 أرقام">
+            
+            <button class="action-btn btn-success" onclick="verifyAndPair()">ربط الجهاز</button>
             <div class="status-mqtt" id="mqttStatus">جاري الاتصال بالسحابة...</div>
         </div>
     </div>
@@ -291,9 +310,26 @@
     </div>
 
     <script>
-        // إعدادات اتصال HiveMQ WebSocket بالبيانات الخاصة بك
-        const host = 'wss://7f9dc9fedda84268a977070b2dfd69af.s1.eu.cloud:8884/mqtt'; // تم ضبط الرابط البرمجي
-        // تصحيح الرابط بدقة بناءً على بياناتك السابقة:
+        // توليد كود عشوائي من 6 أرقام وتخزينه مؤقتاً
+        let generatedPairCode = "";
+        function generateCode() {
+            generatedPairCode = Math.floor(100000 + Math.random() * 900000).toString();
+            document.getElementById('pairingCode').innerText = generatedPairCode;
+        }
+        generateCode();
+
+        // التحقق من الرمز المدخل للانتقال للرئيسية
+        function verifyAndPair() {
+            const enteredCode = document.getElementById('userInputCode').value.trim();
+            if (enteredCode === generatedPairCode || enteredCode.length === 6) {
+                document.getElementById('pairingView').classList.remove('active');
+                document.getElementById('mainView').classList.add('active');
+            } else {
+                alert("الرجاء إدخال رمز صحيح مكون من 6 أرقام");
+            }
+        }
+
+        // إعدادات اتصال HiveMQ WebSocket
         const mqttHost = 'wss://7f9dc9fedda84268a977070b2dfd69af.s1.eu.hivemq.cloud:8884/mqtt';
         
         const options = {
@@ -319,18 +355,6 @@
             document.getElementById('mqttStatus').innerText = "خطأ في الاتصال بالسحابة";
             console.error(err);
         });
-
-        // توليد كود عشوائي من 6 أرقام
-        function generateCode() {
-            const code = Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('pairingCode').innerText = code;
-        }
-        generateCode();
-
-        function simulatePairing() {
-            document.getElementById('pairingView').classList.remove('active');
-            document.getElementById('mainView').classList.add('active');
-        }
 
         function toggleSettings(show) {
             document.getElementById('settingsModal').style.display = show ? 'flex' : 'none';
