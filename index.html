@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الكويست</title>
+    <style>
+        body { background: #121212; color: #fff; font-family: Tahoma, sans-serif; text-align: center; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        button, select { padding: 10px 15px; margin: 10px; background: #6200ee; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        select { background: #333; }
+        .screen { width: 100%; height: 300px; background: #000; border: 2px dashed #6200ee; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>لوحة تحكم الميتا كويست بالجوال</h2>
+    
+    <div class="screen" id="streamScreen">
+        <p>شاشة بث الجوال ستظهر هنا</p>
+    </div>
+
+    <h3>إعدادات الأزرار (Keybindings)</h3>
+    <div>
+        <label>القير اليمين (يسار/يمين): </label>
+        <select id="stickRight">
+            <option value="scroll">تمرير الشاشة (Scroll)</option>
+            <option value="volume">رفع/خفض الصوت</option>
+        </select>
+    </div>
+    <div>
+        <label>زر A: </label>
+        <select id="btnA">
+            <option value="click">نقرة (Click)</option>
+            <option value="back">رجوع (Back)</option>
+        </select>
+    </div>
+
+    <br>
+    <button onclick="saveSettings()">حفظ الإعدادات</button>
+    <p id="status" style="color: #03dac6;"></p>
+</div>
+
+<script>
+    function saveSettings() {
+        const stick = document.getElementById('stickRight').value;
+        const btn = document.getElementById('btnA').value;
+        localStorage.setItem('stickRight', stick);
+        localStorage.setItem('btnA', btn);
+        document.getElementById('status').innerText = "تم حفظ الإعدادات بنجاح!";
+    }
+
+    // فحص أزرار وحدات التحكم (Gamepad API) عند توصيل الكويست
+    window.addEventListener("gamepadconnected", (e) => {
+        console.log("تم اكتشاف وحدة التحكم:", e.gamepad.id);
+        document.getElementById('status').innerText = "متصل بوحدة التحكم!";
+    });
+</script>
+
+</body>
+</html>
