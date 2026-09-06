@@ -15,6 +15,7 @@
             --accent-color: #6366f1;
             --accent-hover: #4f46e5;
             --success-color: #10b981;
+            --download-color: #0ea5e9;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             --border-color: rgba(255, 255, 255, 0.1);
@@ -53,7 +54,7 @@
             background: var(--card-bg);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
-            padding: 40px;
+            padding: 30px 40px;
             border-radius: 20px;
             text-align: center;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
@@ -63,24 +64,24 @@
 
         .pairing-box h2 {
             margin-top: 0;
-            font-size: 24px;
+            font-size: 22px;
             color: var(--text-main);
         }
 
         .pairing-box p {
             color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 20px;
+            font-size: 13px;
+            margin-bottom: 15px;
         }
 
         .code-display {
-            font-size: 38px;
+            font-size: 34px;
             letter-spacing: 8px;
             color: #38bdf8;
-            margin: 15px 0;
+            margin: 10px 0;
             font-weight: 700;
             background: rgba(0, 0, 0, 0.4);
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
         }
@@ -88,15 +89,15 @@
         /* خانة إدخال الكود */
         .pairing-input {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             background: #1f2937;
             color: #38bdf8;
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            font-size: 22px;
+            font-size: 20px;
             text-align: center;
             letter-spacing: 5px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             box-sizing: border-box;
             outline: none;
         }
@@ -221,10 +222,10 @@
 
         .action-btn {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s;
@@ -233,7 +234,7 @@
         .btn-primary {
             background: var(--accent-color);
             color: white;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .btn-primary:hover {
@@ -243,34 +244,52 @@
         .btn-success {
             background: var(--success-color);
             color: white;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .btn-success:hover {
             background: #059669;
         }
 
+        /* زر تحميل الـ APK المميز */
+        .btn-download {
+            background: var(--download-color);
+            color: white;
+            margin-top: 8px;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            line-height: normal;
+        }
+
+        .btn-download:hover {
+            background: #0284c7;
+        }
+
         .status-mqtt {
-            font-size: 13px;
+            font-size: 12px;
             color: #38bdf8;
-            margin-top: 12px;
+            margin-top: 10px;
             font-weight: 500;
         }
     </style>
 </head>
 <body>
 
-    <!-- الواجهة الأولى: كود الربط وإدخاله -->
+    <!-- الواجهة الأولى: كود الربط وإدخاله وتحميل التطبيق -->
     <div id="pairingView" class="view active">
         <div class="pairing-box">
             <h2>إقتران الأجهزة</h2>
             <p>رمز النظارة الخاص بك:</p>
             <div class="code-display" id="pairingCode">------</div>
             
-            <p style="margin-top: 20px;">أدخل رمز الاقتران للاتصال:</p>
             <input type="text" id="userInputCode" class="pairing-input" maxlength="6" placeholder="أدخل 6 أرقام">
             
             <button class="action-btn btn-success" onclick="verifyAndPair()">ربط الجهاز</button>
+            
+            <!-- زر تحميل تطبيق الـ APK للنظارة -->
+            <a href="./app.apk" class="action-btn btn-download" download="QuestCtrl.apk">📥 تحميل تطبيق الكويست (APK)</a>
+
             <div class="status-mqtt" id="mqttStatus">جاري الاتصال بالسحابة...</div>
         </div>
     </div>
