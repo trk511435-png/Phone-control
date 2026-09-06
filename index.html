@@ -5,58 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الكويست</title>
     <style>
-        body { background: #121212; color: #fff; font-family: Tahoma, sans-serif; text-align: center; padding: 20px; }
-        .container { max-width: 600px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        button, select { padding: 10px 15px; margin: 10px; background: #6200ee; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        select { background: #333; }
-        .screen { width: 100%; height: 300px; background: #000; border: 2px dashed #6200ee; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border-radius: 5px; }
+        body { background: #0f0f0f; color: #fff; font-family: Tahoma, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .view { display: none; width: 100vw; height: 100vh; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+        .active { display: flex; }
+        
+        /* شاشة الكود */
+        .pairing-box { background: #1e1e1e; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.6); }
+        .code-display { font-size: 48px; letter-spacing: 8px; color: #03dac6; margin: 20px 0; font-weight: bold; background: #000; padding: 10px 20px; border-radius: 8px; }
+        
+        /* شاشة التلفون الرئيسية */
+        .screen-container { width: 80%; height: 75vh; background: #000; border: 2px solid #6200ee; border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; }
+        
+        /* زر الإعدادات تحت يسار */
+        .settings-btn { position: absolute; bottom: 20px; left: 20px; background: #6200ee; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .settings-btn:hover { background: #7c4dff; }
+
+        /* نافذة الإعدادات المنبثقة */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+        .modal-content { background: #1e1e1e; padding: 30px; border-radius: 12px; width: 400px; text-align: right; }
+        select, .close-btn { width: 100%; padding: 10px; margin-top: 10px; background: #333; color: white; border: none; border-radius: 5px; font-size: 16px; }
+        .close-btn { background: #cf6679; margin-top: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>لوحة تحكم الميتا كويست بالجوال</h2>
-    
-    <div class="screen" id="streamScreen">
-        <p>شاشة بث الجوال ستظهر هنا</p>
+    <!-- الواجهة الأولى: كود الربط -->
+    <div id="pairingView" class="view active">
+        <div class="pairing-box">
+            <h2>رمز الربط مع الجوال</h2>
+            <p>أدخل هذا الرمز في تطبيق الجوال للبدء</p>
+            <div class="code-display" id="pairingCode">------</div>
+            <button onclick="simulatePairing()" style="padding: 10px 20px; background: #03dac6; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">محاكاة نجاح الربط</button>
+        </div>
     </div>
 
-    <h3>إعدادات الأزرار (Keybindings)</h3>
-    <div>
-        <label>القير اليمين (يسار/يمين): </label>
-        <select id="stickRight">
-            <option value="scroll">تمرير الشاشة (Scroll)</option>
-            <option value="volume">رفع/خفض الصوت</option>
-        </select>
-    </div>
-    <div>
-        <label>زر A: </label>
-        <select id="btnA">
-            <option value="click">نقرة (Click)</option>
-            <option value="back">رجوع (Back)</option>
-        </select>
+    <!-- الواجهة الرئيسية: شاشة التلفون وزر الإعدادات -->
+    <div id="mainView" class="view">
+        <div class="screen-container">
+            <h3 style="color: #888;">بث شاشة الجوال المباشر هنا</h3>
+            <!-- زر الإعدادات في التحت يسار -->
+            <button class="settings-btn" onclick="toggleSettings(true)">⚙️ الإعدادات</button>
+        </div>
     </div>
 
-    <br>
-    <button onclick="saveSettings()">حفظ الإعدادات</button>
-    <p id="status" style="color: #03dac6;"></p>
-</div>
+    <!-- نافذة إعدادات الأزرار -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h3>تخصيص أزرار الكويست</h3>
+            <label>القير اليمين (يسار/يمين):</label>
+            <select id="stickRight">
+                <option value="scroll">تمرير الشاشة (Scroll)</option>
+                <option value="volume">رفع/خفض الصوت</option>
+            </select>
+            
+            <label style="margin-top: 15px; display: block;">زر A:</label>
+            <select id="btnA">
+                <option value="click">نقرة (Click)</option>
+                <option value="back">رجوع (Back)</option>
+            </select>
 
-<script>
-    function saveSettings() {
-        const stick = document.getElementById('stickRight').value;
-        const btn = document.getElementById('btnA').value;
-        localStorage.setItem('stickRight', stick);
-        localStorage.setItem('btnA', btn);
-        document.getElementById('status').innerText = "تم حفظ الإعدادات بنجاح!";
-    }
+            <button class="close-btn" onclick="toggleSettings(false)">حفظ وإغلاق</button>
+        </div>
+    </div>
 
-    // فحص أزرار وحدات التحكم (Gamepad API) عند توصيل الكويست
-    window.addEventListener("gamepadconnected", (e) => {
-        console.log("تم اكتشاف وحدة التحكم:", e.gamepad.id);
-        document.getElementById('status').innerText = "متصل بوحدة التحكم!";
-    });
-</script>
+    <script>
+        // توليد كود عشوائي من 6 أرقام عند فتح الصفحة
+        function generateCode() {
+            const code = Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('pairingCode').innerText = code;
+        }
+        generateCode();
 
+        // الانتقال للشاشة الرئيسية بعد الربط (مؤقتاً بالضغط على الزر للتجربة)
+        function simulatePairing() {
+            document.getElementById('pairingView').classList.remove('active');
+            document.getElementById('mainView').classList.add('active');
+        }
+
+        // فتح وإغلاق نافذة الإعدادات
+        function toggleSettings(show) {
+            document.getElementById('settingsModal').style.display = show ? 'flex' : 'none';
+        }
+
+        // رصد وحدات التحكم للكويست
+        window.addEventListener("gamepadconnected", (e) => {
+            console.log("تم توصيل يد التحكم:", e.gamepad.id);
+        });
+    </script>
 </body>
 </html>
