@@ -207,7 +207,7 @@
             <h2>اختر نوع جهازك الحالي</h2>
             <p>حدد الجهاز لتشغيل الواجهة المخصصة له:</p>
             <button class="action-btn btn-success" onclick="selectRole('quest')">🥽 أنا في ميتا كويست (استقبال وتحكم)</button>
-            <button class="action-btn btn-primary" onclick="selectRole('phone')">📱 أنا في الهاتف / الإيباد (بث الشاشة)</button>
+            <button class="action-btn btn-primary" onclick="selectRole('phone')">📱 أنا في الهاتف / الإيباد (بث الكاميرا/العرض)</button>
         </div>
     </div>
 
@@ -227,9 +227,9 @@
     <div id="phoneView" class="view">
         <div class="box">
             <h2>لوحة بث الهاتف / الإيباد</h2>
-            <p>أدخل رمز النظارة للربط وبدء البث:</p>
+            <p>أدخل رمز النظارة للربط وبدء البث الآمن:</p>
             <input type="text" id="targetCodeInput" class="pairing-input" maxlength="6" placeholder="أدخل 6 أرقام">
-            <button class="action-btn btn-success" id="startBroadcastBtn" onclick="startBroadcasting()">📡 بدء بث شاشة الجوال</button>
+            <button class="action-btn btn-success" id="startBroadcastBtn" onclick="startBroadcasting()">📡 بدء البث المباشر (الكاميرا/العرض)</button>
             <button class="action-btn btn-danger" id="stopBroadcastBtn" onclick="stopBroadcasting()" style="display:none;">🛑 إيقاف البث</button>
             <button class="action-btn btn-primary" onclick="location.reload()" style="background:#374151;">تغيير الجهاز</button>
             <div class="status-mqtt" id="mqttStatusPhone">جاري الاتصال بالسحابة...</div>
@@ -240,7 +240,7 @@
     <div id="questMainView" class="view">
         <div class="screen-container">
             <div id="waitingStreamText" class="stream-placeholder">
-                <h3>بانتظار بدء بث الشاشة من الهاتف...</h3>
+                <h3>بانتظار بدء البث من الهاتف...</h3>
                 <p id="controllerData">حالة القير: بانتظار إشارات التحكم...</p>
             </div>
             <video id="remoteScreen" autoplay playsinline></video>
@@ -307,10 +307,7 @@
             document.getElementById('mqttStatusQuest').innerText = "متصل بالسحابة (MQTT)";
             document.getElementById('mqttStatusPhone').innerText = "متصل بالسحابة (MQTT)";
             client.subscribe('quest/control/commands', (err) => {
-                if (!err) console.log("مشتريات/اشتراك القناة بنجاح");
-            });
-            client.subscribe('quest/stream/signal', (err) => {
-                if (!err) console.log("متصل بقناة البث");
+                if (!err) console.log("متصل بقناة الأوامر");
             });
         });
 
@@ -325,7 +322,7 @@
             console.error(err);
         });
 
-        // وظائف بث الشاشة من الهاتف
+        // وظيفة البث المرن في الهاتف (تتجاوز قيود متصفحات الهواتف)
         async function startBroadcasting() {
             const code = document.getElementById('targetCodeInput').value.trim();
             if (code.length !== 6) {
@@ -333,13 +330,24 @@
                 return;
             }
             try {
-                localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                // محاولة مشاركة الشاشة أولاً، وإذا رفض المتصفح يتحول تلقائياً للكاميرا كبديل مباشر
+                if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                    try {
+                        localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                    } catch (e) {
+                        console.warn("مشاركة الشاشة غير مدعومة بالمتصفح، جاري التحويل لطريقة البديل المرئي...");
+                        localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+                    }
+                } else {
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+                }
+
                 document.getElementById('startBroadcastBtn').style.display = 'none';
                 document.getElementById('stopBroadcastBtn').style.display = 'block';
-                alert("تم بدء بث الشاشة بنجاح!");
+                alert("تم بدء البث بنجاح!");
             } catch (err) {
-                console.error("فشل بث الشاشة:", err);
-                alert("تعذر بدء مشاركة الشاشة من المتصفح.");
+                console.error("تعذر بدء البث:", err);
+                alert("تعذر بدء البث من متصفح هاتفك بسبب قيود النظام الأمنية.");
             }
         }
 
