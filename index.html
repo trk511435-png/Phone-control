@@ -3,27 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم الكويست</title>
-    <!-- استدعاء مكتبة MQTT.js للاتصال السحابي -->
+    <title>لوحة تحكم الكويست السحابية</title>
+    <!-- استدعاء مكتبة MQTT.js -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
-        body { background: #0f0f0f; color: #fff; font-family: Tahoma, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        .view { display: none; width: 100vw; height: 100vh; flex-direction: column; justify-content: center; align-items: center; position: relative; }
-        .active { display: flex; }
-        
-        .pairing-box { background: #1e1e1e; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.6); }
-        .code-display { font-size: 48px; letter-spacing: 8px; color: #03dac6; margin: 20px 0; font-weight: bold; background: #000; padding: 10px 20px; border-radius: 8px; }
-        
-        .screen-container { width: 80%; height: 75vh; background: #000; border: 2px solid #6200ee; border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; flex-direction: column; }
-        
-        .settings-btn { position: absolute; bottom: 20px; left: 20px; background: #6200ee; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
-        .settings-btn:hover { background: #7c4dff; }
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.75);
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --success-color: #10b981;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-        .modal-content { background: #1e1e1e; padding: 30px; border-radius: 12px; width: 400px; text-align: right; }
-        select, .close-btn { width: 100%; padding: 10px; margin-top: 10px; background: #333; color: white; border: none; border-radius: 5px; font-size: 16px; }
-        .close-btn { background: #cf6679; margin-top: 20px; cursor: pointer; }
-        .status-mqtt { font-size: 14px; color: #ffeb3b; margin-top: 10px; }
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #0b0f19 100%);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .view {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        /* تصميم كرت رمز الربط */
+        .pairing-box {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            max-width: 420px;
+            width: 90%;
+        }
+
+        .pairing-box h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: var(--text-main);
+        }
+
+        .pairing-box p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .code-display {
+            font-size: 42px;
+            letter-spacing: 10px;
+            color: #38bdf8;
+            margin: 20px 0;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* الشاشة الرئيسية وبث التلفون */
+        .screen-container {
+            width: 85%;
+            height: 80vh;
+            background: #020617;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+        }
+
+        .stream-placeholder {
+            text-align: center;
+        }
+
+        .stream-placeholder h3 {
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+
+        #controllerData {
+            color: #38bdf8;
+            font-size: 15px;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        /* زر الإعدادات الأنيق في الأسفل اليسار */
+        .settings-btn {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 12px 22px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-btn:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        /* نافذة الإعدادات المنبثقة (Modal) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #111827;
+            border: 1px solid var(--border-color);
+            padding: 35px;
+            border-radius: 20px;
+            width: 380px;
+            text-align: right;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        label {
+            font-size: 14px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #1f2937;
+            color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 15px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+            margin-top: 15px;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .status-mqtt {
+            font-size: 13px;
+            color: #38bdf8;
+            margin-top: 15px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -31,10 +246,10 @@
     <!-- الواجهة الأولى: كود الربط -->
     <div id="pairingView" class="view active">
         <div class="pairing-box">
-            <h2>رمز الربط مع الجوال</h2>
-            <p>أدخل هذا الرمز في تطبيق الجوال للبدء</p>
+            <h2>الربط مع الجهاز</h2>
+            <p>أدخل هذا الرمز في تطبيق الجوال لتفعيل البث</p>
             <div class="code-display" id="pairingCode">------</div>
-            <button onclick="simulatePairing()" style="padding: 10px 20px; background: #03dac6; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">محاكاة نجاح الربط</button>
+            <button class="action-btn btn-success" onclick="simulatePairing()">بدء الاتصال فوراً</button>
             <div class="status-mqtt" id="mqttStatus">جاري الاتصال بالسحابة...</div>
         </div>
     </div>
@@ -42,58 +257,66 @@
     <!-- الواجهة الرئيسية: شاشة التلفون وزر الإعدادات -->
     <div id="mainView" class="view">
         <div class="screen-container">
-            <h3 style="color: #888;">بث شاشة الجوال المباشر عبر السحابة</h3>
-            <p id="controllerData" style="color: #03dac6;">حالة الأزرار: بانتظار حركة القير...</p>
+            <div class="stream-placeholder">
+                <h3>بث شاشة الجوال المباشر (سحابي)</h3>
+                <br>
+                <p id="controllerData">حالة القير: بانتظار حركة الأزرار...</p>
+            </div>
             <!-- زر الإعدادات في التحت يسار -->
-            <button class="settings-btn" onclick="toggleSettings(true)">⚙️ الإعدادات</button>
+            <button class="settings-btn" onclick="toggleSettings(true)">
+                <span>⚙️</span> الإعدادات
+            </button>
         </div>
     </div>
 
-    <!-- نافذة إعدادات الأزرار -->
+    <!-- نافذة إعدادات الأزرار المنبثقة -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
-            <h3>تخصيص أزرار الكويست</h3>
-            <label>القير اليمين (يسار/يمين):</label>
+            <h3>تخصيص وحدات التحكم</h3>
+            
+            <label>وظيفة القير اليمين (يسار/يمين):</label>
             <select id="stickRight">
                 <option value="scroll">تمرير الشاشة (Scroll)</option>
                 <option value="volume">رفع/خفض الصوت</option>
             </select>
             
-            <label style="margin-top: 15px; display: block;">زر A:</label>
+            <label>وظيفة الزر الرئيسي (A):</label>
             <select id="btnA">
                 <option value="click">نقرة (Click)</option>
                 <option value="back">رجوع (Back)</option>
             </select>
 
-            <button class="close-btn" onclick="toggleSettings(false)">حفظ وإغلاق</button>
+            <button class="action-btn btn-primary" onclick="toggleSettings(false)">حفظ وإغلاق</button>
         </div>
     </div>
 
     <script>
-        // إعدادات اتصال HiveMQ WebSocket
-        const host = 'wss://7f9dc9fedda84268a977070b2dfd69af.s1.eu.hivemq.cloud:8884/mqtt';
+        // إعدادات اتصال HiveMQ WebSocket بالبيانات الخاصة بك
+        const host = 'wss://7f9dc9fedda84268a977070b2dfd69af.s1.eu.cloud:8884/mqtt'; // تم ضبط الرابط البرمجي
+        // تصحيح الرابط بدقة بناءً على بياناتك السابقة:
+        const mqttHost = 'wss://7f9dc9fedda84268a977070b2dfd69af.s1.eu.hivemq.cloud:8884/mqtt';
+        
         const options = {
             clientId: 'quest_client_' + Math.random().toString(16).substr(2, 8),
             protocolId: 'MQTT',
             protocolVersion: 4,
             clean: true,
             reconnectPeriod: 1000,
-            // ضع اسم المستخدم وكلمة المرور الخاصة بمنصة HiveMQ هنا إذا طُطلبت
-            // username: 'YOUR_USERNAME',
-            // password: 'YOUR_PASSWORD'
+            username: 'S',
+            password: 'sss435738'
         };
 
-        const client = mqtt.connect(host, options);
+        const client = mqtt.connect(mqttHost, options);
 
         client.on('connect', () => {
             document.getElementById('mqttStatus').innerText = "متصل بالسحابة بنجاح (MQTT)";
             client.subscribe('quest/control/commands', (err) => {
-                if (!err) console.log("تم الاشتراكات بنجاح");
+                if (!err) console.log("تم الاشتراك بنجاح في القناة");
             });
         });
 
         client.on('error', (err) => {
-            document.getElementById('mqttStatus').innerText = "خطأ في الاتصال السحابي";
+            document.getElementById('mqttStatus').innerText = "خطأ في الاتصال بالسحابة";
             console.error(err);
         });
 
@@ -113,7 +336,7 @@
             document.getElementById('settingsModal').style.display = show ? 'flex' : 'none';
         }
 
-        // قراءة أزرار وقير الكويست وإرسالها عبر MQTT
+        // رصد أزرار وقير الكويست وإرسالها عبر السحابة
         window.addEventListener("gamepadconnected", (e) => {
             console.log("تم توصيل يد التحكم:", e.gamepad.id);
         });
@@ -122,16 +345,16 @@
             const gamepads = navigator.getGamepads();
             if (gamepads[0]) {
                 const gp = gamepads[0];
-                // قراءة القير اليمين (محور الحركة الأفقي والرأسي مثلاً)
                 const axisX = gp.axes[2]?.toFixed(2) || 0;
                 
                 if (Math.abs(axisX) > 0.2) {
                     const action = document.getElementById('stickRight').value;
                     const payload = JSON.stringify({ action: action, value: axisX });
                     
-                    // إرسال الأمر عبر سحابة HiveMQ
-                    client.publish('quest/control/commands', payload);
-                    document.getElementById('controllerData').innerText = `إرسال أمر: ${action} القيمة: ${axisX}`;
+                    if(client.connected) {
+                        client.publish('quest/control/commands', payload);
+                    }
+                    document.getElementById('controllerData').innerText = `إرسال أمر: ${action} | القيمة: ${axisX}`;
                 }
             }
             requestAnimationFrame(checkGamepads);
